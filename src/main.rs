@@ -110,7 +110,7 @@ fn main() {
 
     let (dist_x, dist_y) = run_event_loop();
 
-    if dist_x.abs() > 0 && dist_y.abs() > 0 {
+    if dist_x.abs() > 0 || dist_y.abs() > 0 {
         Command::new("wlrctl")
             .arg("pointer")
             .arg("move")
