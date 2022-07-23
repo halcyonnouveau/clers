@@ -14,43 +14,62 @@ struct Bounds {
 }
 
 impl Bounds {
+    pub fn mid(&self, num_1: i32, num_2: i32) -> i32 {
+        (num_1 + num_2) / 2
+    }
+
     pub fn get_center(&self) -> (i32, i32) {
-        (mid(self.tl.0, self.tr.0), mid(self.tl.1, self.bl.1))
+        (
+            self.mid(self.tl.0, self.tr.0),
+            self.mid(self.tl.1, self.bl.1),
+        )
     }
 
     pub fn move_tl(&mut self) {
-        self.tr = (mid(self.tl.0, self.tr.0), self.tr.1);
-        self.bl = (self.bl.0, mid(self.tl.1, self.bl.1));
-        self.br = (mid(self.bl.0, self.br.0), mid(self.tr.1, self.br.1));
+        self.tr = (self.mid(self.tl.0, self.tr.0), self.tr.1);
+        self.bl = (self.bl.0, self.mid(self.tl.1, self.bl.1));
+        self.br = (
+            self.mid(self.bl.0, self.br.0),
+            self.mid(self.tr.1, self.br.1),
+        );
     }
 
     pub fn move_tr(&mut self) {
-        self.tl = (mid(self.tl.0, self.tr.0), self.tl.1);
-        self.bl = (mid(self.bl.0, self.br.0), mid(self.tl.1, self.bl.1));
-        self.br = (self.br.0, mid(self.tr.1, self.br.1));
+        self.tl = (self.mid(self.tl.0, self.tr.0), self.tl.1);
+        self.bl = (
+            self.mid(self.bl.0, self.br.0),
+            self.mid(self.tl.1, self.bl.1),
+        );
+        self.br = (self.br.0, self.mid(self.tr.1, self.br.1));
     }
 
     pub fn move_bl(&mut self) {
-        self.tl = (self.tl.0, mid(self.tl.1, self.bl.1));
-        self.tr = (mid(self.tl.0, self.tr.0), mid(self.tr.1, self.br.1));
-        self.br = (mid(self.bl.0, self.br.0), self.br.1);
+        self.tl = (self.tl.0, self.mid(self.tl.1, self.bl.1));
+        self.tr = (
+            self.mid(self.tl.0, self.tr.0),
+            self.mid(self.tr.1, self.br.1),
+        );
+        self.br = (self.mid(self.bl.0, self.br.0), self.br.1);
     }
 
     pub fn move_br(&mut self) {
-        self.tl = (mid(self.tl.0, self.tr.0), mid(self.tl.1, self.bl.1));
-        self.tr = (self.tr.0, mid(self.tr.1, self.br.1));
-        self.bl = (mid(self.bl.0, self.br.0), self.bl.1);
+        self.tl = (
+            self.mid(self.tl.0, self.tr.0),
+            self.mid(self.tl.1, self.bl.1),
+        );
+        self.tr = (self.tr.0, self.mid(self.tr.1, self.br.1));
+        self.bl = (self.mid(self.bl.0, self.br.0), self.bl.1);
     }
 }
 
 fn main() {
+    // Run in a closure scope so raylib closes when it leaves
     let run_event_loop = || -> (i32, i32) {
         let (mut rl, thread) = raylib::init()
             .transparent()
             .undecorated()
             .width(0)
             .height(0)
-            .vsync()
             .build();
 
         let (mut dist_x, mut dist_y) = (0, 0);
@@ -73,9 +92,7 @@ fn main() {
                 Some(KEY_J) => b.move_bl(),
                 Some(KEY_K) => b.move_tr(),
                 Some(KEY_L) => b.move_br(),
-                Some(KEY_SPACE) => {
-                    break;
-                }
+                Some(KEY_SPACE) => break,
                 _ => {}
             }
 
@@ -100,18 +117,14 @@ fn main() {
             .arg(dist_x.to_string())
             .arg(dist_y.to_string())
             .output()
-            .expect("failed to execute process");
+            .expect("failed to execute pointer move");
 
         Command::new("wlrctl")
             .arg("pointer")
             .arg("click")
             .output()
-            .expect("failed to execute process");
+            .expect("failed to execute pointer click");
     }
-}
-
-fn mid(num_1: i32, num_2: i32) -> i32 {
-    (num_1 + num_2) / 2
 }
 
 fn draw_lines(mut d: RaylibDrawHandle, b: &Bounds) {
@@ -123,9 +136,9 @@ fn draw_lines(mut d: RaylibDrawHandle, b: &Bounds) {
 
     // Vertical
     d.draw_line(
-        mid(b.tl.0, b.tr.0),
+        b.mid(b.tl.0, b.tr.0),
         b.tr.1,
-        mid(b.bl.0, b.br.0),
+        b.mid(b.bl.0, b.br.0),
         b.br.1,
         Color::RED,
     );
@@ -133,9 +146,9 @@ fn draw_lines(mut d: RaylibDrawHandle, b: &Bounds) {
     // Horizontal
     d.draw_line(
         b.bl.0,
-        mid(b.tl.1, b.bl.1),
+        b.mid(b.tl.1, b.bl.1),
         b.br.0,
-        mid(b.tl.1, b.bl.1),
+        b.mid(b.tl.1, b.bl.1),
         Color::RED,
     );
 }
