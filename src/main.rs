@@ -63,54 +63,50 @@ impl Bounds {
 }
 
 fn main() {
-    // Run in a closure scope so raylib closes when it leaves
-    let run_event_loop = || -> (i32, i32) {
-        let (mut rl, thread) = raylib::init()
-            .transparent()
-            .undecorated()
-            .width(0)
-            .height(0)
-            .build();
+    let (mut rl, thread) = raylib::init()
+        .transparent()
+        .undecorated()
+        .width(0)
+        .height(0)
+        .build();
 
-        let (mut dist_x, mut dist_y) = (0, 0);
+    let (x, y) = (rl.get_screen_width(), rl.get_screen_height());
 
-        let (x, y) = (rl.get_screen_width(), rl.get_screen_height());
-        let mut b = Bounds {
-            tl: (1, 1),
-            tr: (x, 1),
-            bl: (1, y),
-            br: (x, y),
-        };
-
-        while !rl.window_should_close() {
-            let center = b.get_center();
-            dist_x = center.0 - rl.get_mouse_x();
-            dist_y = center.1 - rl.get_mouse_y();
-
-            match rl.get_key_pressed() {
-                Some(KEY_H) => b.move_tl(),
-                Some(KEY_J) => b.move_bl(),
-                Some(KEY_K) => b.move_tr(),
-                Some(KEY_L) => b.move_br(),
-                Some(KEY_SPACE) => break,
-                _ => {}
-            }
-
-            let mut d = rl.begin_drawing(&thread);
-            d.clear_background(Color::new(0, 0, 0, 0));
-
-            let center = b.get_center();
-            d.draw_circle_lines(center.0, center.1, 5.0, Color::GREEN);
-
-            draw_lines(d, &b);
-        }
-
-        (dist_x, dist_y)
+    let mut cancel = true;
+    let (mut dist_x, mut dist_y) = (0, 0);
+    let mut b = Bounds {
+        tl: (1, 1),
+        tr: (x, 1),
+        bl: (1, y),
+        br: (x, y),
     };
 
-    let (dist_x, dist_y) = run_event_loop();
+    while !rl.window_should_close() {
+        let center = b.get_center();
+        dist_x = center.0 - rl.get_mouse_x();
+        dist_y = center.1 - rl.get_mouse_y();
 
-    if dist_x.abs() > 0 || dist_y.abs() > 0 {
+        match rl.get_key_pressed() {
+            Some(KEY_H) => b.move_tl(),
+            Some(KEY_J) => b.move_bl(),
+            Some(KEY_K) => b.move_tr(),
+            Some(KEY_L) => b.move_br(),
+            Some(KEY_SPACE) => {
+                cancel = false;
+                break;
+            }
+            _ => {}
+        }
+
+        let mut d = rl.begin_drawing(&thread);
+        d.clear_background(Color::new(0, 0, 0, 0));
+        d.draw_circle_lines(center.0, center.1, 5.0, Color::GREEN);
+        draw_lines(d, &b);
+    }
+
+    drop(rl);
+
+    if !cancel {
         Command::new("wlrctl")
             .arg("pointer")
             .arg("move")
