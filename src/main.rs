@@ -72,8 +72,7 @@ fn main() {
 
     let (x, y) = (rl.get_screen_width(), rl.get_screen_height());
 
-    let mut cancel = true;
-    let (mut dist_x, mut dist_y) = (0, 0);
+    let mut click = false;
     let mut b = Bounds {
         tl: (1, 1),
         tr: (x, 1),
@@ -83,16 +82,21 @@ fn main() {
 
     while !rl.window_should_close() {
         let center = b.get_center();
-        dist_x = center.0 - rl.get_mouse_x();
-        dist_y = center.1 - rl.get_mouse_y();
+        let dist_x = center.0 - rl.get_mouse_x();
+        let dist_y = center.1 - rl.get_mouse_y();
 
         match rl.get_key_pressed() {
             Some(KEY_H) => b.move_tl(),
             Some(KEY_J) => b.move_bl(),
             Some(KEY_K) => b.move_tr(),
             Some(KEY_L) => b.move_br(),
+            Some(KEY_SEMICOLON) => {
+                move_mouse(dist_x, dist_y);
+                break;
+            },
             Some(KEY_SPACE) => {
-                cancel = false;
+                click = true;
+                move_mouse(dist_x, dist_y);
                 break;
             }
             _ => {}
@@ -106,21 +110,26 @@ fn main() {
 
     drop(rl);
 
-    if !cancel {
-        Command::new("wlrctl")
-            .arg("pointer")
-            .arg("move")
-            .arg(dist_x.to_string())
-            .arg(dist_y.to_string())
-            .output()
-            .expect("failed to execute pointer move");
-
+    // Click after raylib window is closed, so it
+    // actually clicks what you want
+    if click {
         Command::new("wlrctl")
             .arg("pointer")
             .arg("click")
             .output()
             .expect("failed to execute pointer click");
     }
+}
+
+fn move_mouse(dist_x: i32, dist_y: i32) {
+    Command::new("wlrctl")
+        .arg("pointer")
+        .arg("move")
+        .arg(dist_x.to_string())
+        .arg(dist_y.to_string())
+        .output()
+        .expect("failed to execute pointer move");
+
 }
 
 fn draw_lines(mut d: RaylibDrawHandle, b: &Bounds) {
